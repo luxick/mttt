@@ -1,0 +1,3 @@
+* Meta Tic Tac Toe
+** Build
+Run ~nimble release~ to build
