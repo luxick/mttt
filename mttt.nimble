@@ -11,7 +11,7 @@ backend       = "js"
 
 # Dependencies
 
-requires "nim >= 1.0.0"
+requires "nim >= 1.0.0", "libmttt >= 2.0.0"
 
 task debug, "Compile debug client":
   exec "nim js --out:public/mttt.js -d:local mttt.nim"

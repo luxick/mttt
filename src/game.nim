@@ -56,7 +56,7 @@ proc newGame*(canvasId: string, width, height: int): Game =
   result = Game(
     renderer: newRenderer2D(canvasId, width, height),
     scene: Scene.Game,
-    state: newGame(player1, player2),
+    state: newGameState(player1, player2),
     paused: false
   )
   switchScene(result, Scene.Game)
