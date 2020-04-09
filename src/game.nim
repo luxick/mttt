@@ -1,13 +1,14 @@
-import dom, math, strformat
+import dom, math, strformat, times
 
-import gamelight/[graphics, geometry, vec, utils]
+import gamelight/[graphics, vec]
 
 import libmttt
 
 type
   Game* = ref object
     renderer: Renderer2D
-    lastUpdate, totalTime: float
+    startTime: Time
+    totalTime*: Duration
     paused: bool
     scene: Scene
     state: GameState
@@ -22,7 +23,7 @@ const
   font = "Helvetica, monospace"
   padding = 10 # Padding around the game area in pixels
 
-var 
+var
   renderWidth, renderHeight: int ## Canvas render area in pixels
 
 proc toTimeString(milliseconds: float): string =
@@ -38,15 +39,15 @@ proc switchScene(game: Game, scene: Scene) =
     of Scene.Game:
       var elements: seq[Element] = @[]
 
-      let timeTextPos = (padding.toFloat, padding.toFloat)
+      let timeTextPos = (padding.toFloat, padding.toFloat).toPoint
       elements.add game.renderer.createTextElement("Time", timeTextPos, "#000000", 26, font)
 
-      let timePos = (padding.toFloat, padding.toFloat + 35.0)
+      let timePos = (padding.toFloat, padding.toFloat + 35.0).toPoint
       game.timeElement = game.renderer.createTextElement("0", timePos, "#000000", 14, font)
 
 
 proc newGame*(canvasId: string, width, height: int): Game =
-  var 
+  var
     player1 = Player(name: "Player 1")
     player2 = Player(name: "Player 2")
 
@@ -57,25 +58,26 @@ proc newGame*(canvasId: string, width, height: int): Game =
     renderer: newRenderer2D(canvasId, width, height),
     scene: Scene.Game,
     state: newGameState(player1, player2),
-    paused: false
+    paused: false,
+    startTime: getTime()
   )
   switchScene(result, Scene.Game)
 
-proc update(game: Game, time: float) =
+proc update(game: Game, time: Duration) =
   # Update the game logic
   # Return early if paused.
   if game.paused or game.scene != Scene.Game: return
 
-  game.totalTime += time
+  game.totalTime = getTime() - game.startTime
 
 proc drawMainMenu(game: Game) =
   discard
 
 proc drawGame(game: Game) =
   # Draw changing UI Elements
-  game.timeElement.innerHTML = game.totalTime.toTimeString
+  game.timeElement.innerHTML = fmt"{game.totalTime.inMinutes}m {game.totalTime.inSeconds mod 60}s"
 
-proc draw(game: Game) = 
+proc draw(game: Game) =
   # Draw the current screen on the canvas
   # Fill background color.
   game.renderer.fillRect(0.0, 0.0, renderWidth, renderHeight, gameBgColor)
@@ -85,7 +87,7 @@ proc draw(game: Game) =
   of Scene.Game:
     drawGame(game)
 
-proc nextFrame*(game: Game, frameTime: float) = 
+proc nextFrame*(game: Game, frameTime: Duration) =
   # Determine id an update is necessary
   game.update(frameTime)
   game.draw()
