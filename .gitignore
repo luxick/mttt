@@ -5,5 +5,5 @@
 ### Nim ###
 nimcache/
 public/mttt.js
-
+.vscode/
 # End of https://www.gitignore.io/api/nim
