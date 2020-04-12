@@ -1,9 +1,8 @@
 import dom, strformat, times, jsconsole
-
 import gamelight/[graphics, vec]
-
 import libmttt
 
+from lenientops import `*`, `+`
 type
   Game* = ref object
     renderer: Renderer2D
@@ -27,9 +26,48 @@ const
 
 var
   debugMode = true
-  renderWidth, renderHeight: int ## Canvas render area in pixels
   # TODO this should be dynamic
   sidebarWidth = 150             ## Size of the left sidebar
+
+proc cellClick(event: Event): void = 
+  ## TODO Process cell clicks from here
+  let 
+    cX = event.target.getAttribute("x")
+    cY = event.target.getAttribute("y")
+    mX = event.target.getAttribute("metaX")
+    mY = event.target.getAttribute("metaY")
+  console.debug(fmt"Click: cell ({cX}, {cY}) in mini board ({mX}, {mY})")
+
+proc createMiniCells(renderer: Renderer2D, board: Coordinate, start: Point, size: float): seq[Element] =
+  ## Create the interactive cells in a miniboard
+  for x in 0 .. 2:
+    for y in 0 .. 2:
+      let pos = (start.x + x * size, start.y + y * size).toPoint
+      let cell: Element = renderer.createDivElement(pos, size, size)
+      cell.setAttribute("info", fmt"({x}, {y}) at {start}")
+      cell.setAttribute("X", $x)
+      cell.setAttribute("Y", $y)
+      cell.setAttribute("metaX", $board.x)
+      cell.setAttribute("metaY", $board.y)
+      cell.onclick = cellClick
+      cell.classList.add("mttt-cell")
+      result.add cell
+
+proc createCellElements(renderer: Renderer2D): seq[Element] =
+  ## Create the cell elements for the whole game board
+  # TODO: put those somewhere shared
+  let
+    gAreaX = 2 * padding + sidebarWidth
+    gAreaY = padding
+    gAreaH = renderer.getHeight - 2 * padding
+    gAreaW = renderer.getWidth - sidebarWidth - 3 * padding
+    gSize = min(gAreaH, gAreaW)
+    bSize = (gSize / 3)
+  
+  for x in 0 .. 2:
+    for y in 0 .. 2:
+      let pos = (gAreaX + x * bSize, gAreaY + y * bSize)
+      result.add renderer.createMiniCells((x, y), pos, bSize / 3)
 
 proc switchScene(game: Game, scene: Scene) =
   case scene:
@@ -42,29 +80,23 @@ proc switchScene(game: Game, scene: Scene) =
       let timePos = (padding.toFloat, padding.toFloat + 35.0).toPoint
       game.timeElement = game.renderer.createTextElement("0", timePos, "#000000", 20, font)
 
+      # TODO Save these somewhere???
+      let elements = game.renderer.createCellElements()
+
 proc newGame*(canvasId: string, debug: bool = false): Game =
   debugMode = debug
   var
     player1 = Player(name: "Player 1")
     player2 = Player(name: "Player 2")
 
-  # Update game area size
-  renderHeight = window.innerHeight
-  renderWidth = window.innerWidth
-
-  console.debug(fmt"Game area: {renderWidth}x{renderHeight}")
-  
-  if debugMode:
-    renderHeight = renderHeight - 19  ## The size of the debug bar
-    console.debug(fmt"Game area after debug check: {renderWidth}x{renderHeight}")
-
   result = Game(
-    renderer: newRenderer2D(canvasId, renderWidth, renderHeight),
+    renderer: newRenderer2D(canvasId, window.innerWidth, window.innerHeight),
     scene: Scene.Game,
     state: newGameState(player1, player2),
     paused: false,
     startTime: getTime()
   )
+  result.renderer.setScaleToScreen(true)
   switchScene(result, Scene.Game)
 
 proc update(game: Game, time: Duration) =
@@ -77,7 +109,7 @@ proc update(game: Game, time: Duration) =
 proc drawMainMenu(game: Game) =
   discard
 
-proc drawPos(renderer: Renderer2D, x, y: float): void =    
+proc drawPos(renderer: Renderer2D, x, y: float): void =
   renderer.fillText(fmt"(x:{x.toInt}, y:{y.toInt})", (x, y).toPoint)
 
 proc drawPos(renderer: Renderer2D, point: Point): void =
@@ -118,8 +150,8 @@ proc drawGame(game: Game) =
   let
     gAreaX = 2 * padding + sidebarWidth
     gAreay = padding
-    gAreaH = renderHeight - 2 * padding
-    gAreaW = renderWidth - sidebarWidth - 3 * padding
+    gAreaH = game.renderer.getHeight - 2 * padding
+    gAreaW = game.renderer.getWidth - sidebarWidth - 3 * padding
     gSize = min(gAreaH, gAreaW)
     bSize = (gSize / 3).toInt
 
@@ -138,7 +170,7 @@ proc draw(game: Game) =
   ## Draw the current screen on the canvas
 
   # Fill background color.
-  game.renderer.fillRect(0.0, 0.0, renderWidth, renderHeight, gameBgColor)
+  game.renderer.fillRect(0.0, 0.0, game.renderer.getWidth, game.renderer.getHeight, gameBgColor)
 
   case game.scene
   of Scene.MainMenu:
