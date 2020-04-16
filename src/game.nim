@@ -1,8 +1,8 @@
-import dom, strformat, times, jsconsole, options, pure.strutils
+import dom, strformat, times, jsconsole, options, pure/strutils
 import gamelight/[graphics, vec]
 import libmttt
-
 from lenientops import `*`, `+`
+
 type
   Game* = ref object
     renderer: Renderer2D
@@ -25,6 +25,7 @@ type
 
 const
   gameBgColor = "#eaeaea"
+  okBoardColor = "#A8E5A03F"
   metaBoardColor = "#484d4d"
   miniBoardColor = "#6a6c6c"
   font = "Helvetica, monospace"
@@ -188,6 +189,8 @@ proc drawBoard(game: Game, zero: Point, size: int, coord: Coordinate, color = "#
   
   let status = game.state.board[coord.x][coord.y].checkBoard
   if status ==  Mark.Free:
+    if (game.state.currentBoard.isNone or game.state.currentBoard.get == coord):
+      game.renderer.fillRect(zero.x + 1, zero.y + 1, size - 2, size - 2, okBoardColor)
     game.drawBoardLines(zero, size, color, pad)
     game.drawPlayerMarks(zero, size, coord)
   else:
