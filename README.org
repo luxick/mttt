@@ -1,3 +1,5 @@
 * Meta Tic Tac Toe
+** Test it
+Play it at [[https://pfand.ninja/mttt/][right here]].
 ** Build
 Run ~nimble release~ to build
