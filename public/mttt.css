@@ -1,3 +1,7 @@
-.mttt-cell:hover{
-    background: lightblue;
+.debug-bar{
+  position: relative;
+  background: #fff;
+  display: flex;
+  justify-content: space-around;
+  z-index: 100;
 }
